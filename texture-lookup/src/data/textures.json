@@ -1,0 +1,127 @@
+{
+  "games": {
+    "ESPN NFL 2K5": {
+      "teams": {
+        "49ers": { "uniforms": {} },
+        "Bears": {
+          "uniforms": {
+            "Current Uniform": {
+              "shared": {
+                "helmet": [
+                  "8995aadcfcf1a1a2-f64971d5eaf8c7fc-00006213",
+                  "f18739b3370e311f-f64971d5eaf8c7fc-00005dd3",
+                  "f07433a32282a0c2-de4f5dbc76dbf029-00005dd3",
+                  "158fc84d8d6be323-de4f5dbc76dbf029-00006213"
+                ]
+              },
+              "home": {
+                "pants": [
+                  "baf6353668836933-cfded3a233616883-00006253",
+                  "baf6353668836933-ba4eaa43eb175976-00006253",
+                  "cf8b188b0f331e60-cfded3a233616883-00005e13",
+                  "cf8b188b0f331e60-ba4eaa43eb175976-00005e13"
+                ]
+              },
+              "away": {}
+            }
+          }
+        },
+        "Bengals": { "uniforms": {} },
+        "Bills": { "uniforms": {} },
+        "Broncos": { "uniforms": {} },
+        "Browns": { "uniforms": {} },
+        "Buccaneers": { "uniforms": {} },
+        "Cardinals": { "uniforms": {} },
+        "Chargers": { "uniforms": {} },
+        "Chiefs": { "uniforms": {} },
+        "Colts": {
+          "uniforms": {
+            "Current Uniform": {
+              "shared": {
+                "pants": ["7001", "7002", "7003", "7004"]
+              },
+              "home": {
+                "jerseyTop": ["1001", "1002", "1003", "1004"],
+                "sleeves": ["1101", "1102"],
+                "socks": ["1201", "1202"],
+                "helmet": ["1301", "1302", "1303", "1304"],
+                "numbers": ["1401", "1402", "1403"],
+                "sidelineJerseys": ["1501"],
+                "teamSelectPlayer": ["1601"],
+                "teamSelectHelmet": ["1701", "1702"]
+              },
+              "away": {
+                "jerseyTop": ["2001", "2002", "2003", "2004"],
+                "sleeves": ["2101", "2102"],
+                "socks": ["2201", "2202"],
+                "helmet": ["2301", "2302", "2303", "2304"],
+                "numbers": ["2401", "2402", "2403"],
+                "sidelineJerseys": ["2501"],
+                "teamSelectPlayer": ["2601"],
+                "teamSelectHelmet": ["2701", "2702"]
+              }
+            }
+          }
+        },
+        "Commanders": { "uniforms": {} },
+        "Cowboys": { "uniforms": {} },
+        "Dolphins": { "uniforms": {} },
+        "Eagles": { "uniforms": {} },
+        "Falcons": { "uniforms": {} },
+        "Giants": { "uniforms": {} },
+        "Jaguars": { "uniforms": {} },
+        "Jets": { "uniforms": {} },
+        "Lions": { "uniforms": {} },
+        "Packers": { "uniforms": {} },
+        "Panthers": { "uniforms": {} },
+        "Patriots": { "uniforms": {} },
+        "Raiders": { "uniforms": {} },
+        "Rams": { "uniforms": {} },
+        "Ravens": { "uniforms": {} },
+        "Saints": { "uniforms": {} },
+        "Seahawks": { "uniforms": {} },
+        "Steelers": { "uniforms": {} },
+        "Texans": { "uniforms": {} },
+        "Titans": { "uniforms": {} },
+        "Vikings": { "uniforms": {} }
+      }
+    },
+    "ESPN NFL Football": {
+      "teams": {
+        "49ers": { "uniforms": {} },
+        "Bears": { "uniforms": {} },
+        "Bengals": { "uniforms": {} },
+        "Bills": { "uniforms": {} },
+        "Broncos": { "uniforms": {} },
+        "Browns": { "uniforms": {} },
+        "Buccaneers": { "uniforms": {} },
+        "Cardinals": { "uniforms": {} },
+        "Chargers": { "uniforms": {} },
+        "Chiefs": { "uniforms": {} },
+        "Colts": { "uniforms": {} },
+        "Commanders": { "uniforms": {} },
+        "Cowboys": { "uniforms": {} },
+        "Dolphins": { "uniforms": {} },
+        "Eagles": { "uniforms": {} },
+        "Falcons": { "uniforms": {} },
+        "Giants": { "uniforms": {} },
+        "Jaguars": { "uniforms": {} },
+        "Jets": { "uniforms": {} },
+        "Lions": { "uniforms": {} },
+        "Packers": { "uniforms": {} },
+        "Panthers": { "uniforms": {} },
+        "Patriots": { "uniforms": {} },
+        "Raiders": { "uniforms": {} },
+        "Rams": { "uniforms": {} },
+        "Ravens": { "uniforms": {} },
+        "Saints": { "uniforms": {} },
+        "Seahawks": { "uniforms": {} },
+        "Steelers": { "uniforms": {} },
+        "Texans": { "uniforms": {} },
+        "Titans": { "uniforms": {} },
+        "Vikings": { "uniforms": {} }
+      }
+    }
+  }
+}
+
