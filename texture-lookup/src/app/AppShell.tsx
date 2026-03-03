@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import JSZip from "jszip";
 
 import { getTextureData } from "@/lib/data";
 import { lookupUniformTextures } from "@/lib/lookup";
 import { matchKeyFromText, parseSetChoice } from "@/lib/search";
 import { buildSharingIndexForGame } from "@/lib/sharing";
+import {
+  canShowTextureImage,
+  getTextureImageUrl,
+  getTexturesBaseUrl
+} from "@/lib/textureUrl";
 import type { LookupResult, PartKey, SetChoice, TextureId } from "@/lib/types";
 
 const partOrder: PartKey[] = [
@@ -108,8 +114,47 @@ function SharedWarning({ result }: { result: LookupResult }) {
   );
 }
 
-function ResultsView({ result }: { result: LookupResult }) {
+async function downloadImageAtFullRes(url: string, filename: string) {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function ResultsView({
+  result,
+  game,
+  team,
+  uniformName
+}: {
+  result: LookupResult;
+  game?: string;
+  team?: string;
+  uniformName?: string;
+}) {
   const [copied, setCopied] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [downloadingPart, setDownloadingPart] = useState<string | null>(null);
+  const baseUrl = getTexturesBaseUrl();
+  const showImages =
+    baseUrl &&
+    game &&
+    team &&
+    uniformName &&
+    canShowTextureImage(baseUrl, team);
+
+  function toggleSection(title: string) {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  }
 
   async function copy(id: string) {
     const text = filenameFor(id);
@@ -118,53 +163,380 @@ function ResultsView({ result }: { result: LookupResult }) {
     window.setTimeout(() => setCopied((v) => (v === text ? null : v)), 1000);
   }
 
+  async function downloadPartAsZip(
+    sectionTitle: string,
+    partKey: PartKey,
+    bucket: string,
+    ids: string[]
+  ) {
+    if (!baseUrl || !team || !uniformName) return;
+    const key = `${sectionTitle}-${partKey}`;
+    setDownloadingPart(key);
+    try {
+      const zip = new JSZip();
+      for (const id of ids) {
+        const url = getTextureImageUrl({
+          basePath: baseUrl,
+          team,
+          uniformName,
+          bucket,
+          id
+        });
+        const res = await fetch(url, { mode: "cors" });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        zip.file(filenameFor(id), blob);
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const safe = (s: string) => s.replace(/[^a-zA-Z0-9-_]/g, "_");
+      const zipName = `${safe(team)}-${safe(uniformName)}-${safe(bucket)}-${partKey}.zip`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(zipBlob);
+      a.download = zipName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } finally {
+      setDownloadingPart((v) => (v === key ? null : v));
+    }
+  }
+
   return (
     <div className="grid gap-4">
       <SharedWarning result={result} />
 
-      {result.sections.map((section) => (
-        <div key={section.title} className="rounded-2xl bg-white/5 ring-1 ring-white/10">
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-            <div className="text-sm font-semibold">{section.title}</div>
-            <div className="text-xs text-slate-300/80">
-              Output filenames look like <span className="font-mono">1234.png</span>
-            </div>
-          </div>
+      {result.sections.map((section) => {
+        const isExpanded = expandedSections.has(section.title);
+        return (
+          <div key={section.title} className="rounded-2xl bg-white/5 ring-1 ring-white/10">
+            <button
+              type="button"
+              onClick={() => toggleSection(section.title)}
+              className="flex w-full items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-left hover:bg-white/5"
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={classNames(
+                    "text-sm transition-transform",
+                    isExpanded ? "rotate-90" : ""
+                  )}
+                >
+                  ▶
+                </span>
+                <div className="text-sm font-semibold">{section.title}</div>
+              </div>
+              <div className="text-xs text-slate-300/80">
+                Output filenames look like <span className="font-mono">1234.png</span>
+              </div>
+            </button>
 
-          <div className="grid gap-4 p-4 md:grid-cols-2">
-            {partOrder
-              .map((k) => ({ k, ids: section.parts[k] }))
-              .filter((x) => (x.ids?.length ?? 0) > 0)
-              .map(({ k, ids }) => (
-                <div key={k} className="rounded-xl bg-black/20 p-4 ring-1 ring-white/10">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <div className="text-sm font-semibold">{partLabels[k]}</div>
-                    <div className="text-xs text-slate-300/80">{ids!.length} texture(s)</div>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {ids!.map((id) => {
+            {isExpanded ? (
+              <div className="grid gap-4 p-4 md:grid-cols-2">
+                {partOrder
+                  .map((k) => ({ k, ids: section.parts[k] }))
+                  .filter((x) => (x.ids?.length ?? 0) > 0)
+                  .map(({ k, ids }) => {
+                    const imageUrlBase =
+                      showImages &&
+                      baseUrl &&
+                      team &&
+                      uniformName;
+                    const canDownloadAll =
+                      imageUrlBase && canShowTextureImage(baseUrl, team);
+                    const partKey = `${section.title}-${k}`;
+                    const isDownloading = downloadingPart === partKey;
+                    return (
+                      <div key={k} className="rounded-xl bg-black/20 p-4 ring-1 ring-white/10">
+                        <div className="flex flex-wrap items-baseline justify-between gap-3">
+                          <div className="text-sm font-semibold">{partLabels[k]}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-300/80">
+                              {ids!.length} texture(s)
+                            </span>
+                            {canDownloadAll && ids!.length > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  downloadPartAsZip(
+                                    section.title,
+                                    k,
+                                    section.bucket,
+                                    ids!
+                                  )
+                                }
+                                disabled={isDownloading}
+                                className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/15 disabled:opacity-50"
+                              >
+                                {isDownloading ? "Preparing…" : `Download ${partLabels[k]}`}
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {ids!.map((id) => {
+                            const out = filenameFor(id);
+                            const imageUrl =
+                              imageUrlBase &&
+                              getTextureImageUrl({
+                                basePath: baseUrl,
+                                team,
+                                uniformName,
+                                bucket: section.bucket,
+                                id
+                              });
+                            return (
+                              <div key={id} className="inline-flex flex-col items-start gap-1.5">
+                                {imageUrl ? (
+                                  <TextureImage
+                                    src={imageUrl}
+                                    alt={partLabels[k]}
+                                    className="max-h-24 w-auto cursor-pointer rounded border border-white/10 object-contain hover:ring-2 hover:ring-white/30"
+                                    downloadFilename={out}
+                                    onDownloadClick={() =>
+                                      downloadImageAtFullRes(imageUrl, out)
+                                    }
+                                  />
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() => copy(id)}
+                                  className="group inline-flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/10"
+                                  title="Click to copy filename"
+                                >
+                                  <span className="font-mono">{out}</span>
+                                  <span className="text-[10px] text-slate-300/70 group-hover:text-slate-200/80">
+                                    {copied === out ? "copied" : "copy"}
+                                  </span>
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TextureImage({
+  src,
+  alt,
+  className,
+  downloadFilename,
+  onDownloadClick
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  downloadFilename?: string;
+  onDownloadClick?: () => void;
+}) {
+  const [error, setError] = useState(false);
+  if (error) return null;
+  const clickable = Boolean(downloadFilename && onDownloadClick);
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      title={clickable ? `Click to download ${downloadFilename} (full resolution)` : undefined}
+      onError={() => setError(true)}
+      onClick={clickable ? onDownloadClick : undefined}
+      role={clickable ? "button" : undefined}
+    />
+  );
+}
+
+const FOLDER_BUCKETS = [
+  { key: "shared" as const, title: "Shared" },
+  { key: "home" as const, title: "Home" },
+  { key: "away" as const, title: "Away" }
+];
+
+function FolderView({ team, uniformName }: { team: string; uniformName: string }) {
+  const baseUrl = getTexturesBaseUrl();
+  const [bucketIds, setBucketIds] = useState<Record<string, string[]> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [downloadingBucket, setDownloadingBucket] = useState<string | null>(null);
+  const showImages = baseUrl && canShowTextureImage(baseUrl, team);
+
+  useEffect(() => {
+    if (!team || !uniformName) {
+      setBucketIds(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    Promise.all(
+      FOLDER_BUCKETS.map(({ key }) =>
+        fetch(
+          `/api/textures?team=${encodeURIComponent(team)}&uniformName=${encodeURIComponent(uniformName)}&bucket=${key}`
+        ).then((r) => (r.ok ? r.json() : r.status === 503 ? null : { ids: [] }))
+      )
+    )
+      .then(([shared, home, away]) => {
+        if (shared === null || home === null || away === null) {
+          setError("Folder view not available. Set TEXTURES_FOLDER_PATH in .env.local.");
+          setBucketIds(null);
+          return;
+        }
+        setBucketIds({
+          shared: shared.ids ?? [],
+          home: home.ids ?? [],
+          away: away.ids ?? []
+        });
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "Failed to load folder");
+        setBucketIds(null);
+      })
+      .finally(() => setLoading(false));
+  }, [team, uniformName]);
+
+  function toggleBucket(title: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  }
+
+  async function downloadBucketAsZip(bucketKey: string, ids: string[]) {
+    if (!baseUrl || !team || !uniformName || ids.length === 0) return;
+    setDownloadingBucket(bucketKey);
+    try {
+      const zip = new JSZip();
+      for (const id of ids) {
+        const url = getTextureImageUrl({
+          basePath: baseUrl,
+          team,
+          uniformName,
+          bucket: bucketKey,
+          id
+        });
+        const res = await fetch(url, { mode: "cors" });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        zip.file(filenameFor(id), blob);
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const safe = (s: string) => s.replace(/[^a-zA-Z0-9-_]/g, "_");
+      const zipName = `${safe(team)}-${safe(uniformName)}-${bucketKey}.zip`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(zipBlob);
+      a.download = zipName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } finally {
+      setDownloadingBucket(null);
+    }
+  }
+
+  if (!showImages) return null;
+  if (loading) {
+    return (
+      <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="text-sm text-slate-300/90">Loading folder view…</div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="text-sm text-amber-200/90">{error}</div>
+      </div>
+    );
+  }
+  if (!bucketIds) return null;
+
+  const total = Object.values(bucketIds).reduce((s, arr) => s + arr.length, 0);
+  if (total === 0) {
+    return (
+      <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="text-sm text-slate-300/90">No texture files found in folder for this team/uniform.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4">
+      <div className="rounded-2xl bg-white/5 ring-1 ring-white/10">
+        <div className="border-b border-white/10 px-4 py-3">
+          <div className="text-sm font-semibold">Folder view — all textures on disk</div>
+          <div className="mt-1 text-xs text-slate-300/80">
+            No part labels; just every .png in each set. Click thumbnail to download (full res).
+          </div>
+        </div>
+        <div className="divide-y divide-white/10">
+          {FOLDER_BUCKETS.map(({ key, title }) => {
+            const ids = bucketIds[key] ?? [];
+            const isExpanded = expanded.has(title);
+            const isDownloading = downloadingBucket === key;
+            return (
+              <div key={key}>
+                <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleBucket(title)}
+                    className="flex flex-1 items-center gap-2 text-left hover:bg-white/5 rounded-lg -mx-2 px-2 py-1"
+                  >
+                    <span className={classNames("text-sm transition-transform", isExpanded ? "rotate-90" : "")}>▶</span>
+                    <span className="text-sm font-medium">{title}</span>
+                    <span className="text-xs text-slate-400">({ids.length} file{ids.length !== 1 ? "s" : ""})</span>
+                  </button>
+                  {ids.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => downloadBucketAsZip(key, ids)}
+                      disabled={isDownloading}
+                      className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium hover:bg-white/15 disabled:opacity-50 shrink-0"
+                    >
+                      {isDownloading ? "Preparing…" : "Download all"}
+                    </button>
+                  )}
+                </div>
+                {isExpanded && (
+                  <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4">
+                    {ids.map((id) => {
+                      const url = getTextureImageUrl({
+                        basePath: baseUrl,
+                        team,
+                        uniformName,
+                        bucket: key,
+                        id
+                      });
                       const out = filenameFor(id);
                       return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => copy(id)}
-                          className="group inline-flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/10"
-                          title="Click to copy filename"
-                        >
-                          <span className="font-mono">{out}</span>
-                          <span className="text-[10px] text-slate-300/70 group-hover:text-slate-200/80">
-                            {copied === out ? "copied" : "copy"}
+                        <div key={id} className="flex flex-col items-start gap-1.5">
+                          <TextureImage
+                            src={url}
+                            alt={id}
+                            className="max-h-24 w-auto cursor-pointer rounded border border-white/10 object-contain hover:ring-2 hover:ring-white/30"
+                            downloadFilename={out}
+                            onDownloadClick={() => downloadImageAtFullRes(url, out)}
+                          />
+                          <span className="truncate font-mono text-xs text-slate-400" title={out}>
+                            {out}
                           </span>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
-                </div>
-              ))}
-          </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -325,13 +697,23 @@ function BrowsePane({ game }: { game: string }) {
       </div>
 
       {mode === "drilldown" ? (
-        result ? (
-          <ResultsView result={result} />
-        ) : (
-          <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-            <div className="text-sm text-slate-300/90">Pick a team and uniform to see textures.</div>
-          </div>
-        )
+        <>
+          {result ? (
+            <ResultsView
+              result={result}
+              game={game}
+              team={team}
+              uniformName={uniformName}
+            />
+          ) : (
+            <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+              <div className="text-sm text-slate-300/90">Pick a team and uniform to see textures.</div>
+            </div>
+          )}
+          {team && uniformName ? (
+            <FolderView team={team} uniformName={uniformName} />
+          ) : null}
+        </>
       ) : (
         <div className="rounded-2xl bg-white/5 ring-1 ring-white/10">
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
@@ -343,6 +725,7 @@ function BrowsePane({ game }: { game: string }) {
             <table className="w-full min-w-[980px] border-separate border-spacing-0">
               <thead className="sticky top-0 bg-[#070a12]/90 backdrop-blur">
                 <tr className="text-left text-xs text-slate-300/80">
+                  <th className="border-b border-white/10 px-4 py-3 w-16">Preview</th>
                   <th className="border-b border-white/10 px-4 py-3">textureId.png</th>
                   <th className="border-b border-white/10 px-4 py-3">Shared count</th>
                   <th className="border-b border-white/10 px-4 py-3">Team</th>
@@ -352,8 +735,32 @@ function BrowsePane({ game }: { game: string }) {
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {filteredRows.slice(0, 500).map((r, idx) => (
+                {filteredRows.slice(0, 500).map((r, idx) => {
+                  const tableBaseUrl = getTexturesBaseUrl();
+                  const showTableImage =
+                    tableBaseUrl && canShowTextureImage(tableBaseUrl, r.team);
+                  const tableImageUrl =
+                    showTableImage &&
+                    getTextureImageUrl({
+                      basePath: tableBaseUrl,
+                      team: r.team,
+                      uniformName: r.uniformName,
+                      bucket: r.bucket,
+                      id: r.textureId
+                    });
+                  return (
                   <tr key={`${r.textureId}-${r.team}-${r.uniformName}-${r.bucket}-${r.part}-${idx}`} className="hover:bg-white/5">
+                    <td className="border-b border-white/5 px-2 py-2.5 align-middle">
+                      {tableImageUrl ? (
+                        <TextureImage
+                          src={tableImageUrl}
+                          alt={r.part}
+                          className="max-h-12 w-auto rounded border border-white/10 object-contain"
+                        />
+                      ) : (
+                        <span className="text-slate-500/60">—</span>
+                      )}
+                    </td>
                     <td className="border-b border-white/5 px-4 py-2.5 font-mono text-xs text-slate-100">
                       <button
                         type="button"
@@ -382,7 +789,8 @@ function BrowsePane({ game }: { game: string }) {
                     <td className="border-b border-white/5 px-4 py-2.5 text-xs text-slate-200/90">{r.bucket}</td>
                     <td className="border-b border-white/5 px-4 py-2.5 text-xs text-slate-200/90">{r.part}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -561,7 +969,7 @@ function PromptingPane({ game }: { game: string }) {
               <input
                 value={advInput}
                 onChange={(e) => setAdvInput(e.target.value)}
-                placeholder='e.g. "Colts Current Uniform both"'
+                placeholder='e.g. "Colts Default both"'
                 className="h-11 w-full rounded-xl bg-black/20 px-4 text-sm text-slate-100 ring-1 ring-white/10 outline-none placeholder:text-slate-400/70 focus:ring-white/20"
               />
               <button
@@ -632,7 +1040,7 @@ function PromptingPane({ game }: { game: string }) {
                       step === "team"
                         ? 'e.g. "I want to make a uniform for the Colts"'
                         : step === "uniform"
-                          ? 'e.g. "Current Uniform"'
+                          ? 'e.g. "Default"'
                           : 'e.g. "Both"'
                     }
                     className="h-11 w-full rounded-xl bg-black/20 px-4 text-sm text-slate-100 ring-1 ring-white/10 outline-none placeholder:text-slate-400/70 focus:ring-white/20"
@@ -658,7 +1066,14 @@ function PromptingPane({ game }: { game: string }) {
         )}
       </div>
 
-      {result ? <ResultsView result={result} /> : null}
+      {result ? (
+        <ResultsView
+          result={result}
+          game={game}
+          team={team ?? undefined}
+          uniformName={uniformName ?? undefined}
+        />
+      ) : null}
     </div>
   );
 }

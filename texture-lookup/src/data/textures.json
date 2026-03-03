@@ -2,10 +2,10 @@
   "games": {
     "ESPN NFL 2K5": {
       "teams": {
-        "49ers": { "uniforms": {} },
+        "49ers": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
         "Bears": {
           "uniforms": {
-            "Current Uniform": {
+            "Default": {
               "shared": {
                 "helmet": [
                   "8995aadcfcf1a1a2-f64971d5eaf8c7fc-00006213",
@@ -26,43 +26,15 @@
             }
           }
         },
-        "Bengals": { "uniforms": {} },
-        "Bills": { "uniforms": {} },
-        "Broncos": { "uniforms": {} },
-        "Browns": { "uniforms": {} },
-        "Buccaneers": { "uniforms": {} },
-        "Cardinals": { "uniforms": {} },
-        "Chargers": { "uniforms": {} },
-        "Chiefs": { "uniforms": {} },
-        "Colts": {
-          "uniforms": {
-            "Current Uniform": {
-              "shared": {
-                "pants": ["7001", "7002", "7003", "7004"]
-              },
-              "home": {
-                "jerseyTop": ["1001", "1002", "1003", "1004"],
-                "sleeves": ["1101", "1102"],
-                "socks": ["1201", "1202"],
-                "helmet": ["1301", "1302", "1303", "1304"],
-                "numbers": ["1401", "1402", "1403"],
-                "sidelineJerseys": ["1501"],
-                "teamSelectPlayer": ["1601"],
-                "teamSelectHelmet": ["1701", "1702"]
-              },
-              "away": {
-                "jerseyTop": ["2001", "2002", "2003", "2004"],
-                "sleeves": ["2101", "2102"],
-                "socks": ["2201", "2202"],
-                "helmet": ["2301", "2302", "2303", "2304"],
-                "numbers": ["2401", "2402", "2403"],
-                "sidelineJerseys": ["2501"],
-                "teamSelectPlayer": ["2601"],
-                "teamSelectHelmet": ["2701", "2702"]
-              }
-            }
-          }
-        },
+        "Bengals": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Bills": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Broncos": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Browns": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Buccaneers": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Cardinals": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Chargers": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Chiefs": { "uniforms": { "Default": { "shared": {}, "home": {}, "away": {} } } },
+        "Colts": { "uniforms": {} },
         "Commanders": { "uniforms": {} },
         "Cowboys": { "uniforms": {} },
         "Dolphins": { "uniforms": {} },
