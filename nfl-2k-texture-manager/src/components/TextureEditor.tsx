@@ -769,14 +769,22 @@ export default function TextureEditor({
                 + Add Layer
               </button>
             </div>
-            {layers.length <= 1 && !layers.some((l) => l.isTemplateLocked) && (
-              <button
-                onClick={applyJerseyTemplate}
-                className="text-xs text-emerald-400 hover:text-emerald-300 bg-zinc-800 rounded px-2 py-1 w-full text-left"
-              >
-                Apply Jersey Template Layers
-              </button>
-            )}
+            {(() => {
+              const isJersey =
+                relativePath.split(/[/\\]/)[1]?.toLowerCase() === "uniform";
+              const canBuildJersey =
+                isJersey &&
+                layers.length <= 1 &&
+                !layers.some((l) => l.isTemplateLocked);
+              return canBuildJersey ? (
+                <button
+                  onClick={applyJerseyTemplate}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-zinc-800 rounded px-2 py-1 w-full text-left"
+                >
+                  Build My Own Jersey
+                </button>
+              ) : null;
+            })()}
           </div>
 
           {/* Layer list (reversed so topmost layer is at top of list) */}
