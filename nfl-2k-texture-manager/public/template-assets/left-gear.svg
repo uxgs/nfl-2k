@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 144.881 405.033" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Left Gear">
+<rect id="Rectangle 791" x="8.5" y="258.033" width="129" height="147" fill="var(--fill-0, #181D23)"/>
+<rect id="Rectangle 790" width="126" height="255" transform="matrix(1 0 0 -1 10.5 258.033)" fill="var(--fill-0, #181D23)"/>
+<g id="Vector 286" filter="url(#filter0_f_136_4785)">
+<path d="M72.6033 219.437L109.447 236.697C112.954 238.34 117.134 237.245 119.385 234.094C121.513 231.114 121.356 227.073 119.004 224.268L111.1 214.845C110.368 213.971 109.574 213.152 108.724 212.391L105.628 209.621C96.0421 201.044 88.8605 190.114 84.7929 177.912C82.2807 170.375 81 162.483 81 154.539V117.716C81 104.429 83.9683 91.3091 89.6881 79.316L92.3004 73.8386C95.0785 68.0137 98.86 62.7232 103.472 58.2093L116.223 45.7301C118.638 43.3657 120 40.1278 120 36.7474C120 30.3579 115.206 24.9852 108.858 24.2597L107.391 24.092C104.223 23.7299 101.024 24.4431 98.3098 26.117L77.6624 38.8496C74.2252 40.9691 70.9448 43.3329 67.8464 45.9226L44.9958 65.0217C41.0162 68.3478 37.4964 72.1882 34.5288 76.4418C27.6749 86.2656 24 97.9557 24 109.934V122.835C24 129.947 24.7619 137.038 26.2726 143.987L29.6643 159.589C32.5197 172.724 38.233 185.068 46.3981 195.746L51.5457 202.477C57.1 209.741 64.3232 215.558 72.6033 219.437Z" fill="var(--fill-0, #262B33)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_136_4785" x="0" y="0" width="144.881" height="261.456" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="12" result="effect1_foregroundBlur_136_4785"/>
+</filter>
+</defs>
+</svg>
