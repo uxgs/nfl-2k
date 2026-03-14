@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+
+# Env and secrets
+.env
+.env.*
+
+# Vercel
+.vercel
+
+# Debug and misc
+*.log
+.DS_Store
+*.tsbuildinfo
+
+# Optional: uncomment to exclude texture data (keep repo small)
+# data/
